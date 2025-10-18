@@ -189,12 +189,27 @@ const LeagueSimulationPage = ({ userRole, redirectPath, onUnauthorized }) => {
             <h1 className="text-2xl font-bold text-ui-dark mb-4">
               League Simulation & Results
             </h1>
-            <button
-              onClick={handleGoToManagement}
-              className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors"
-            >
-              Go to League Management
-            </button>
+            <div className="flex items-center gap-2">
+              {userRole === "institution" && currentLeague?.id && (
+                <button
+                  onClick={() =>
+                    navigate(
+                      `/InstitutionLeagueSubmissions/${currentLeague.id}`
+                    )
+                  }
+                  className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors"
+                  title="Open latest code submissions for all teams in this league"
+                >
+                  View League Submissions
+                </button>
+              )}
+              <button
+                onClick={handleGoToManagement}
+                className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors"
+              >
+                Go to League Management
+              </button>
+            </div>
           </div>
         </div>
 

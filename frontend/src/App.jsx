@@ -9,12 +9,13 @@ import Institution from "./AgentGames/Institution/Institution";
 import InstitutionTeam from "./AgentGames/Institution/InstitutionTeam";
 import InstitutionLeague from "./AgentGames/Institution/InstitutionLeague";
 import InstitutionLeagueSimulation from "./AgentGames/Institution/InstitutionLeagueSimulation";
-import Leaderboards from './AgentGames/Leaderboards';
-import Admin from './AgentGames/Admin/Admin';
-import AdminLeague from './AgentGames/Admin/AdminLeague';
+import InstitutionLeagueSubmissions from "./AgentGames/Institution/InstitutionLeagueSubmissions";
+import Leaderboards from "./AgentGames/Leaderboards";
+import Admin from "./AgentGames/Admin/Admin";
+import AdminLeague from "./AgentGames/Admin/AdminLeague";
 import AdminLeagueSimulation from "./AgentGames/Admin/AdminLeagueSimulation";
 import AdminInstitutions from "./AgentGames/Admin/AdminInstitutions";
-import StyleGuide from './StyleGuide';
+import StyleGuide from "./StyleGuide";
 import PublishedResults from "./AgentGames/PublishedResults";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import React from "react";
@@ -71,6 +72,10 @@ function App() {
           <Route
             path="InstitutionLeagueSimulation"
             element={<InstitutionLeagueSimulation />}
+          />
+          <Route
+            path="InstitutionLeagueSubmissions/:leagueId"
+            element={<InstitutionLeagueSubmissions />}
           />
           <Route path="InstitutionTeam" element={<InstitutionTeam />} />
           {/* Other Routes */}
