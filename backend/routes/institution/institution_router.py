@@ -70,7 +70,9 @@ async def create_league_endpoint(
     try:
         institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         data = create_league(session, league.model_dump(), institution_id)
 
@@ -95,7 +97,9 @@ async def team_create_endpoint(
     try:
         institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         data = create_team(session, team, institution_id)
         return ResponseModel(
@@ -119,7 +123,9 @@ async def delete_team_endpoint(
     try:
         institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         msg = delete_team(session, team.id, institution_id)
         return ResponseModel(status="success", message=msg)
@@ -143,7 +149,9 @@ async def get_teams_endpoint(
         else:
             institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         teams = get_all_teams(session, institution_id)
         return ResponseModel(
@@ -170,7 +178,9 @@ async def run_simulation_endpoint(
         else:
             institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         # Get the league using the ID
         league = get_league_by_id(session, simulation_config.league_id, institution_id)
@@ -179,8 +189,8 @@ async def run_simulation_endpoint(
         institution = session.get(Institution, institution_id)
         if not institution.docker_access:
             return ErrorResponseModel(
-                status="error", 
-                message="Your institution does not have Docker access. Please contact the administrator."
+                status="error",
+                message="Your institution does not have Docker access. Please contact the administrator.",
             )
 
         # Get environment-aware URL for simulator
@@ -221,13 +231,9 @@ async def run_simulation_endpoint(
                         institution_id,
                         simulation_results,
                         simulation_config.custom_rewards,
-                        feedback_str=(
-                            feedback if isinstance(feedback, str) else None
-                        ),
+                        feedback_str=(feedback if isinstance(feedback, str) else None),
                         feedback_json=(
-                            json.dumps(feedback)
-                            if isinstance(feedback, dict)
-                            else None
+                            json.dumps(feedback) if isinstance(feedback, dict) else None
                         ),
                     )
                 except Exception as e:
@@ -286,7 +292,9 @@ async def get_league_results_endpoint(
         else:
             institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         results = get_all_league_results(session, league.name, institution_id)
         return ResponseModel(
@@ -312,7 +320,9 @@ async def publish_results_endpoint(
     try:
         institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         msg, data = publish_sim_results(
             session, results.league_name, results.id, institution_id, results.feedback
@@ -339,7 +349,9 @@ async def update_expiry_endpoint(
         else:
             institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
         msg = update_expiry_date(session, expiry.league, expiry.date, institution_id)
         return ResponseModel(status="success", message=msg)
@@ -361,9 +373,13 @@ async def assign_team_endpoint(
     try:
         institution_id = current_user.get("institution_id")
         if not institution_id:
-            return ErrorResponseModel(status="error", message="Institution ID not found in token")
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
 
-        msg = assign_team_to_league(session, assignment.team_id, assignment.league_id, institution_id)
+        msg = assign_team_to_league(
+            session, assignment.team_id, assignment.league_id, institution_id
+        )
         return ResponseModel(status="success", message=msg)
     except Exception as e:
         logger.error(f"Error assigning team to league: {e}")
