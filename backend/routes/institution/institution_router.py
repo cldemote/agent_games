@@ -24,9 +24,11 @@ from backend.routes.institution.institution_db import (
     get_all_league_results,
     get_all_teams,
     get_league_by_id,
+    get_unassigned_league,
     publish_sim_results,
     save_simulation_results,
     update_expiry_date,
+    unassign_team,
 )
 from backend.routes.institution.institution_models import (
     ExpiryDate,
@@ -454,4 +456,36 @@ async def delete_league_endpoint(
         logger.error(f"Error deleting league: {e}")
         return ErrorResponseModel(
             status="error", message=f"Failed to delete league: {str(e)}"
+        )
+
+
+@institution_router.post("/unassign-team", response_model=ResponseModel)
+@verify_admin_or_institution
+async def unassign_team_endpoint(
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    session: Session = Depends(get_db),
+):
+    """Move a team to the institution's 'unassigned' league without relying on client-provided league id."""
+    try:
+        # Determine institution scope
+        if current_user["role"] == "admin":
+            institution_id = 1
+        else:
+            institution_id = current_user.get("institution_id")
+        if not institution_id:
+            return ErrorResponseModel(
+                status="error", message="Institution ID not found in token"
+            )
+
+        team_id = request.get("team_id")
+        if not team_id:
+            return ErrorResponseModel(status="error", message="team_id is required")
+
+        msg = unassign_team(session, int(team_id), institution_id)
+        return ResponseModel(status="success", message=msg)
+    except Exception as e:
+        logger.error(f"Error unassigning team: {e}")
+        return ErrorResponseModel(
+            status="error", message=f"Failed to unassign team: {str(e)}"
         )

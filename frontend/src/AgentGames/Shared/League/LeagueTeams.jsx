@@ -27,115 +27,109 @@ const LeagueTeams = ({ selected_league_name, userRole }) => {
     const [actingTeamId, setActingTeamId] = useState(null);
     
     // Use shared API hook
-    const { assignTeamToLeague, isLoading } = useLeagueAPI(userRole);
+  const { assignTeamToLeague, unassignTeam, isLoading } =
+    useLeagueAPI(userRole);
 
-    // Fetch fresh team data when component mounts
-    useEffect(() => {
-        fetchAllTeams();
-    }, []);
+  // Fetch fresh team data when component mounts
+  useEffect(() => {
+    fetchAllTeams();
+  }, []);
 
-    // Filter teams when selected league or teams data changes
-    useEffect(() => {
-      if (!selected_league_name) return;
+  // Filter teams when selected league or teams data changes
+  useEffect(() => {
+    if (!selected_league_name) return;
 
-      // Filter teams that belong to the selected league
-      const newFilteredTeams = teams.filter(
-        (value) => value.league === selected_league_name
-      );
+    // Filter teams that belong to the selected league
+    const newFilteredTeams = teams.filter(
+      (value) => value.league === selected_league_name
+    );
 
-      // Find teams without a league or in the "unassigned" league
-      const newUnassignedTeams = teams.filter(
-        (value) => !value.league || value.league === "unassigned"
-      );
+    // Find teams without a league or in the "unassigned" league
+    const newUnassignedTeams = teams.filter(
+      (value) => !value.league || value.league === "unassigned"
+    );
 
-      setFilteredTeams(newFilteredTeams);
-      setUnassignedTeams(newUnassignedTeams);
+    setFilteredTeams(newFilteredTeams);
+    setUnassignedTeams(newUnassignedTeams);
 
-      if (newFilteredTeams.length === 0) {
-        // Only inform silently if there are absolutely no teams
-        // to avoid spamming when switching leagues frequently
-        // toast.info("No teams assigned to this league");
+    if (newFilteredTeams.length === 0) {
+      // Only inform silently if there are absolutely no teams
+      // to avoid spamming when switching leagues frequently
+      // toast.info("No teams assigned to this league");
+    }
+  }, [selected_league_name, teams]);
+
+  // Resolve league IDs efficiently
+  const selectedLeagueId = useMemo(() => {
+    const lg = leagues.find((l) => l.name === selected_league_name);
+    return lg?.id;
+  }, [leagues, selected_league_name]);
+
+  // No longer rely on global 'unassigned' league discovery; the backend resolves it safely per institution
+
+  // Function to fetch all teams
+  const fetchAllTeams = async () => {
+    setIsLoadingTeams(true);
+    try {
+      const response = await fetch(`${apiUrl}/institution/get-all-teams`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success" && Array.isArray(data.data.teams)) {
+        // Update Redux with fresh team data
+        dispatch(setTeams(data.data.teams));
+      } else if (data.status === "failed") {
+        toast.error(data.message);
       }
-    }, [selected_league_name, teams]);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+    } finally {
+      setIsLoadingTeams(false);
+    }
+  };
 
-    // Resolve league IDs efficiently
-    const selectedLeagueId = useMemo(() => {
-      const lg = leagues.find((l) => l.name === selected_league_name);
-      return lg?.id;
-    }, [leagues, selected_league_name]);
+  const handleAssignTeam = async () => {
+    if (!assignTeamId || !selected_league_name) {
+      toast.error("Please select a team to assign");
+      return;
+    }
 
-    const unassignedLeagueId = useMemo(() => {
-      const lg = leagues.find((l) => l.name?.toLowerCase() === "unassigned");
-      return lg?.id;
-    }, [leagues]);
+    if (!selectedLeagueId) {
+      toast.error("Couldn't find league ID for selected league");
+      return;
+    }
 
-    // Function to fetch all teams
-    const fetchAllTeams = async () => {
-      setIsLoadingTeams(true);
-      try {
-        const response = await fetch(`${apiUrl}/institution/get-all-teams`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+    const result = await assignTeamToLeague(assignTeamId, selectedLeagueId);
 
-        const data = await response.json();
+    if (result.success) {
+      setShowAssignForm(false);
+      setAssignTeamId("");
+      // Refresh teams list after assignment
+      fetchAllTeams();
+    }
+  };
 
-        if (data.status === "success" && Array.isArray(data.data.teams)) {
-          // Update Redux with fresh team data
-          dispatch(setTeams(data.data.teams));
-        } else if (data.status === "failed") {
-          toast.error(data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching teams:", error);
-      } finally {
-        setIsLoadingTeams(false);
-      }
-    };
+  const handleUnassignTeam = async (team) => {
+    const confirm = window.confirm(
+      `Move '${team.name}' to the 'unassigned' league?`
+    );
+    if (!confirm) return;
 
-    const handleAssignTeam = async () => {
-      if (!assignTeamId || !selected_league_name) {
-        toast.error("Please select a team to assign");
-        return;
-      }
-
-      if (!selectedLeagueId) {
-        toast.error("Couldn't find league ID for selected league");
-        return;
-      }
-
-      const result = await assignTeamToLeague(assignTeamId, selectedLeagueId);
-
+    try {
+      setActingTeamId(team.id);
+      const result = await unassignTeam(team.id);
       if (result.success) {
-        setShowAssignForm(false);
-        setAssignTeamId("");
-        // Refresh teams list after assignment
+        toast.success(`'${team.name}' moved to 'unassigned'`);
         fetchAllTeams();
       }
-    };
-
-    const handleUnassignTeam = async (team) => {
-      if (!unassignedLeagueId) {
-        toast.error("Couldn't find the 'unassigned' league. Create it first.");
-        return;
-      }
-      const confirm = window.confirm(
-        `Move '${team.name}' to the 'unassigned' league?`
-      );
-      if (!confirm) return;
-
-      try {
-        setActingTeamId(team.id);
-        const result = await assignTeamToLeague(team.id, unassignedLeagueId);
-        if (result.success) {
-          toast.success(`'${team.name}' moved to 'unassigned'`);
-          fetchAllTeams();
-        }
-      } finally {
-        setActingTeamId(null);
-      }
-    };
+    } finally {
+      setActingTeamId(null);
+    }
+  };
 
     // Button to manually refresh teams list
     const handleRefreshTeams = () => {

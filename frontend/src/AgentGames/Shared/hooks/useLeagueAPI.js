@@ -304,6 +304,39 @@ export const useLeagueAPI = (userRole) => {
   }, [apiUrl, accessToken]);
 
   /**
+   * Unassign team (move to institution's 'unassigned' league)
+   */
+  const unassignTeam = useCallback(async (teamId) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/institution/unassign-team`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ team_id: parseInt(teamId) }),
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        toast.success(data.message);
+        return { success: true };
+      } else {
+        toast.error(data.message || 'Failed to unassign team');
+        return { success: false, error: data.message };
+      }
+    } catch (error) {
+      console.error('Error unassigning team:', error);
+      toast.error('Failed to unassign team');
+      return { success: false, error: 'Network error' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiUrl, accessToken]);
+
+  /**
    * Delete a league
    */
   const deleteLeague = useCallback(async (leagueName) => {
@@ -348,6 +381,7 @@ export const useLeagueAPI = (userRole) => {
     publishResults,
     updateExpiryDate,
     assignTeamToLeague,
+  unassignTeam,
     deleteLeague
   };
 };

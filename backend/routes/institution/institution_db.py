@@ -414,6 +414,44 @@ def assign_team_to_league(session: Session, team_id: int, league_id: int, instit
         raise
 
 
+def get_unassigned_league(session: Session, institution_id: int) -> League:
+    """Fetch the 'unassigned' league for an institution, creating it if missing."""
+    try:
+        unassigned_league = session.exec(
+            select(League)
+            .where(League.name == "unassigned")
+            .where(League.institution_id == institution_id)
+        ).first()
+
+        session.add(unassigned_league)
+        session.flush()
+        return unassigned_league
+    except Exception as e:
+        logger.error(f"Error fetching unassigned league: {e}")
+        raise
+
+
+def unassign_team(session: Session, team_id: int, institution_id: int) -> str:
+    """Move a team to the current institution's 'unassigned' league."""
+    team = session.get(Team, team_id)
+    if not team:
+        raise TeamError(f"Team with ID {team_id} not found")
+
+    if team.institution_id != institution_id:
+        raise InstitutionAccessError("You don't have permission to modify this team")
+
+    try:
+        unassigned_league = get_unassigned_league(session, institution_id)
+        team.league_id = unassigned_league.id
+        session.add(team)
+        session.commit()
+        return f"Team '{team.name}' moved to 'unassigned'"
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error unassigning team: {e}")
+        raise
+
+
 def generate_signup_link(session: Session, league_id: int, institution_id: int) -> Dict:
     """Generate a new signup link for a league"""
     try:
