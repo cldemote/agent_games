@@ -41,7 +41,6 @@ RISKY_NAMES = [
     "help",
     "type",
     "object",
-    "super",
     "eval",
     "exec",
     "open",
@@ -52,6 +51,7 @@ RISKY_NAMES = [
     "sys",
     "subprocess",
     "importlib",
+    "super",
     "__import__",
     "__builtins__"
 ]
@@ -98,6 +98,9 @@ class CodeValidator(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Call(self, node):
+        if self._is_super_init(node):
+            return
+
         if isinstance(node.func, ast.Name) and node.func.id in RISKY_NAMES:
             self.safe = False
             self.error_message = f"Unauthorized function call: {node.func.id}"
@@ -117,6 +120,19 @@ class CodeValidator(ast.NodeVisitor):
             self.error_message = f"Unauthorized access: {node.attr}"
             return
         self.generic_visit(node)
+
+    def _is_super_init(self, node: ast.Call) -> bool:
+        if not isinstance(node.func, ast.Attribute): return False
+        if node.func.attr != '__init__': return False
+        if not isinstance(node.func.value, ast.Call): return False
+        super_call = node.func.value
+        if not isinstance(super_call.func, ast.Name): return False
+        if super_call.func.id != 'super': return False
+
+        for i in node.args:
+            self.generic_visit(i)
+
+        return True
 
     def _is_allowed_import(self, module: str, submodule: str = None) -> bool:
         parts = module.split(".")
